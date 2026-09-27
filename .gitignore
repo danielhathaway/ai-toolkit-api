@@ -1,0 +1,9 @@
+**/media/*
+**/db.sqlite3
+**/__pycache__
+**/migrations
+**/ai-toolkit-api.egg-info
+**/.pytest_cache
+**/build
+**/.venv
+*.lock
