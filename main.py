@@ -1,6 +1,6 @@
 """
 REQUIREMENTS:
-python3 -m pip install fastapi[standard]
+python3 -m pip install fastapi[standard] chemlibrary_chempy
 
 USAGE:
 uv run fastapi dev
@@ -14,13 +14,13 @@ from chempy.conf import read_conf
 from chempy.files import (
     file_read,
     file_safe_write,
-    dir_contents
+    dir_contents,
+    is_child_of_dir
 )
 
 
-app = FastAPI()
-
 ## Configure App
+app = FastAPI()
 APP_HOST_DEFAULT = 'localhost'
 APP_PORT_DEFAULT = '8000'
 APP_HOST = APP_HOST_DEFAULT
@@ -36,6 +36,11 @@ except:
 class ATAFile(BaseModel):
     path: str
     contents:str
+
+
+class ATAFileDirectory(BaseModel):
+    file: str
+    directory: str
 
 
 @app.get('/')
@@ -76,11 +81,12 @@ async def read_file(path:str) -> str:
 async def save_file(file_details: ATAFile) -> bool:
     path = file_details.path
     contents = file_details.contents
-    result = file_safe_write(path=path, contents=contents)
-    if result:
-        message = f'File saved to {path}'
-    else:
-        message = 'File failed to save!'
+    try:
+        result = file_safe_write(path=path, contents=contents)
+    except:
+        result = False
+    if result: message = f'File saved to {path}'
+    else: message = 'File failed to save!'
     return {
         'success': result,
         'path': path,
@@ -89,11 +95,24 @@ async def save_file(file_details: ATAFile) -> bool:
 
 
 @app.get('/environment/working_directory', description='Get the current working directory.')
-def get_working_directory():
-    return os.getcwd()
+async def get_working_directory() -> str:
+    return {
+        'working_directory': f'{os.getcwd()}',
+    }
 
 
 @app.get('/file/directory_contents/{directory_path}', description='Recursively list the contents of a specified directory.')
-def get_dir_contents(directory_path:str):
-    contents = get_dir_contents(path=directory_path, recursive=True)
-    return contents
+async def get_dir_contents(directory_path:str) -> list[str]:
+    contents = dir_contents(path=directory_path, recursive=True)
+    return {
+        'directory_contents': contents,
+    }
+
+
+@app.get('/file/child_of', description='Check if a `file` is within a `directory`.')
+async def child_of(filedir: ATAFileDirectory):
+    return {
+        'file': filedir.file,
+        'is_child_of_directory': is_child_of_dir(path=filedir.file, dir_path=filedir.directory),
+        'directory': filedir.directory,
+    }
