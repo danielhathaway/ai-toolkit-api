@@ -10,6 +10,7 @@ import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from chempy.conf import read_conf
 from chempy.files import (
     file_read,
     file_safe_write,
@@ -19,22 +20,39 @@ from chempy.files import (
 
 app = FastAPI()
 
+## Configure App
+APP_HOST_DEFAULT = 'localhost'
+APP_PORT_DEFAULT = '8000'
+APP_HOST = APP_HOST_DEFAULT
+APP_PORT = APP_HOST_DEFAULT
+try:
+    config = read_conf('./ai-toolkit-api.conf')
+    if 'host' in config: APP_HOST = config['host']
+    if 'port' in config: APP_PORT = config['port']
+except:
+    print('[WARN] Failed to load config file.')
+
+
+class ATAFile(BaseModel):
+    path: str
+    contents:str
+
 
 @app.get('/')
 async def root():
     welcome_message = (
         "Welcome to AI Toolkit API! "
         "You can use this API to accomplish all sorts of tasks! "
-        "To see all the things you can do with this API, check out the documentation at http://localhost:8000/docs."
+        f"To see all the things you can do with this API, check out the documentation at http://{APP_HOST}:{APP_PORT}/docs."
     )
     help_message = (
-        "This is an API running on your local machine (http://localhost:8000). "
+        f"This is an API running on your local machine (http://{APP_HOST}:{APP_PORT}). "
         "You can visit the API URLs to complete tasks, such as reading files, saving files, etc. "
         "The list of tools you can use and how you can use those tools are documented at the 'documentation-url'."
     )
     return {
         'welcome_message': welcome_message,
-        'documentation_url': 'http://127.0.0.1:8000/docs',
+        'documentation_url': f'http://{APP_HOST}:{APP_PORT}/docs',
         'help': help_message
     }
 
@@ -53,10 +71,6 @@ async def read_file(path:str) -> str:
         'contents': contents,
     }
 
-
-class ATAFile(BaseModel):
-    path: str
-    contents:str
 
 @app.post('/file/save/', description='Save a file to the local system.')
 async def save_file(file_details: ATAFile) -> bool:
