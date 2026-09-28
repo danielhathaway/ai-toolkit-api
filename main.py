@@ -6,12 +6,14 @@ USAGE:
 uv run fastapi dev
 """
 
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 
 from chempy.files import (
     file_read,
-    file_safe_write
+    file_safe_write,
+    dir_contents
 )
 
 
@@ -27,7 +29,7 @@ async def root():
     )
     help_message = (
         "This is an API running on your local machine (http://localhost:8000). "
-        "You can use it by visiting the API URLs in order to assist you in various tasks, such as reading files, saving files, etc. "
+        "You can visit the API URLs to complete tasks, such as reading files, saving files, etc. "
         "The list of tools you can use and how you can use those tools are documented at the 'documentation-url'."
     )
     return {
@@ -37,7 +39,7 @@ async def root():
     }
 
 
-@app.get('/file/read/{path}')
+@app.get('/file/read/{path}', description='Read a file from the local system.')
 async def read_file(path:str) -> str:
     try:
         contents = file_read(path)
@@ -56,7 +58,7 @@ class ATAFile(BaseModel):
     path: str
     contents:str
 
-@app.post('/file/save/')
+@app.post('/file/save/', description='Save a file to the local system.')
 async def save_file(file_details: ATAFile) -> bool:
     path = file_details.path
     contents = file_details.contents
@@ -70,3 +72,14 @@ async def save_file(file_details: ATAFile) -> bool:
         'path': path,
         'message': message,
     }
+
+
+@app.get('/environment/working_directory', description='Get the current working directory.')
+def get_working_directory():
+    return os.getcwd()
+
+
+@app.get('/file/directory_contents/{directory_path}', description='Recursively list the contents of a specified directory.')
+def get_dir_contents(directory_path:str):
+    contents = get_dir_contents(path=directory_path, recursive=True)
+    return contents

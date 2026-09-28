@@ -1,6 +1,6 @@
 [project]
 name = "ai-toolkit-api"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="Daniel Hathaway", email="dhathawaycode@proton.me" },
 ]
